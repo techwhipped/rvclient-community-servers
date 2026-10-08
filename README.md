@@ -22,4 +22,13 @@ On a home internet connection setup always makes a **private** server - public c
 - Your game is never changed - it keeps starting from the launcher, even while your server runs.
 - Updates come by themselves; to remove a server, run `Uninstall-RVServer.bat` (or Remove in the launcher for a private server).
 
+## Credits
+Fixes contributed by community server hosts - thank you!
+
+| Who | What | In server |
+|---|---|---|
+| **MCha** (Australia community server) | Found the regular server freezes on slower machines - the server searched all ~550,000 game objects every 30-60 s in a single frame (150-350 ms) - and wrote a fix that skips the objects that didn't change. Built into the server as **Fast object searches** (on by default, a setting in the admin panel). | 2026.10.8.2 |
+
+Found a problem and have a fix? Share it in the rVclient Discord - we test it, build it in and credit you here.
+
 Questions? Ask in the rVclient Discord.
