@@ -27,7 +27,7 @@ Fixes contributed by community server hosts - thank you!
 
 | Who | What | In server |
 |---|---|---|
-| **MCha** (Australia community server) | Found the regular server freezes on slower machines - the server searched all ~550,000 game objects every 30-60 s in a single frame (150-350 ms) - and wrote a fix that skips the objects that didn't change. Built into the server as **Fast object searches** (on by default, a setting in the admin panel). | 2026.10.8.2 |
+| **MCha** (Asia community servers, Japan) | Found the regular server freezes on slower machines - the server searched all ~550,000 game objects every 30-60 s in a single frame (150-350 ms) - and wrote a fix that skips the objects that didn't change. Built into the server as **Fast object searches** (on by default, a setting in the admin panel). | 2026.10.8.2 |
 
 Found a problem and have a fix? Share it in the rVclient Discord - we test it, build it in and credit you here.
 
