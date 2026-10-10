@@ -156,22 +156,39 @@ if (Test-Path $StateFile) { $state = Get-Content $StateFile -Raw | ConvertFrom-J
 # Community servers in public matchmaking must run on a VPS / dedicated server. On a HOME
 # connection a private server (you + friends over Tailscale / Radmin VPN) is what works - so a
 # home PC always gets one. (-ForceCommunity skips this; an already registered box is left as it is.)
+# What this machine is: Windows Server and/or a virtual machine. Many VPS / dedicated providers'
+# addresses are listed as ordinary ISPs, so the address alone made some of them look like home PCs.
+$Machine = @{ os = ''; serverOs = $false; vm = '' }
+try {
+    $osCap = "$((Get-CimInstance Win32_OperatingSystem).Caption)"
+    $cs = Get-CimInstance Win32_ComputerSystem
+    $hw = "$($cs.Manufacturer) $($cs.Model)".Trim()
+    $Machine.os = $osCap
+    $Machine.serverOs = $osCap -match 'Server'
+    if ($hw -match 'VMware|KVM|QEMU|Xen|HVM domU|Virtual Machine|VirtualBox|Bochs|OpenStack|Standard PC|Google Compute|Amazon EC2|DigitalOcean|Droplet|Hetzner|Parallels|Nutanix|oVirt|RHEV|Proxmox|Linode|Vultr|OVH|Scaleway|Alibaba|Tencent') { $Machine.vm = $hw }
+} catch { }
 if ($Edition -eq 'Community' -and -not $ForceCommunity -and -not $state.nodeId -and -not $NodeId) {
     $net = $null
-    try { $net = PostJson '/nodes/network-check' @{} } catch { }
+    try { $net = PostJson '/nodes/network-check' @{ machine = $Machine } } catch { }
     # A backend without that route (or unreachable): ask the same lookup service directly.
     if (-not $net -or $null -eq $net.hosting) {
         try {
             $r = Invoke-RestMethod -Uri 'http://ip-api.com/json/?fields=status,hosting,isp' -TimeoutSec 10
-            if ($r.status -eq 'success') { $net = [pscustomobject]@{ hosting = [bool]$r.hosting; isp = "$($r.isp)" } }
+            if ($r.status -eq 'success') { $net = [pscustomobject]@{ hosting = ([bool]$r.hosting -or $Machine.serverOs); isp = "$($r.isp)" } }
         } catch { }
     }
     if ($net -and $net.hosting -eq $false) {
         Write-Host ''
-        Write-Host "   This PC is on a HOME internet connection$(if ($net.isp) { " ($($net.isp))" })." -ForegroundColor Yellow
-        Write-Host '   Public matchmaking needs a VPS or dedicated server, so this sets up a PRIVATE server instead'
+        Write-Host "   This looks like a HOME internet connection$(if ($net.isp) { " ($($net.isp))" })." -ForegroundColor Yellow
+        Write-Host '   Public matchmaking needs a VPS or dedicated server. On a home PC a PRIVATE server is what works'
         Write-Host '   (recommended): you and the friends you share it with play on it over Tailscale / Radmin VPN.'
-        $Edition = 'Private'
+        Write-Host '   Some hosting companies'' addresses look like home internet - if you RENT this machine from a'
+        Write-Host '   hosting company (VPS / dedicated server), answer y. An admin checks it when reviewing your server.'
+        $isVps = if ($Unattended) { 'n' } else { Ask 'Is this a VPS or dedicated server from a hosting company? (y/N)' 'n' }
+        if ($isVps -match '^y') { Info 'Community server - the network is checked again when an admin reviews it.' }
+        else { $Edition = 'Private' }
+    } elseif ($net -and $null -eq $net.hosting -and $Machine.vm) {
+        Info "Network not recognised, machine is a virtual machine ($($Machine.vm)) - setting up a community server."
     }
 }
 
@@ -341,6 +358,7 @@ if ($PublicIp -notmatch '^\d{1,3}(\.\d{1,3}){3}$') { Fail "Not an IPv4 address: 
 $regions = [ordered]@{ 'us-east-1' = 'USA East'; 'us-west-1' = 'USA West'; 'eu-central-1' = 'Europe'; 'sa-east-1' = 'South America';
     'ap-northeast-1' = 'Asia (Tokyo)'; 'ap-south-1' = 'India'; 'ap-southeast-1' = 'Asia (Singapore)'; 'ap-southeast-2' = 'Oceania' }
 if (-not $Region -and $IsPrivate) { $Region = 'us-east-1' }   # never matchmade: region unused
+$RegionPings = @{}   # measured below - sent at sign-up so the admins' region check uses real pings
 if (-not $Region) {
     # The same pings the game uses: TCP connect to the AWS GameLift endpoint of each region.
     Info 'Measuring the ping to each region...'
@@ -354,6 +372,7 @@ if (-not $Region) {
             $c.Dispose()
         } catch { }
         Info ("  {0,-16} {1}" -f $regions[$k], $(if ($null -ne $ms) { "$ms ms" } else { 'no answer' }))
+        if ($null -ne $ms) { $RegionPings[$k] = [int]$ms }
         if ($null -ne $ms -and $ms -lt $bestMs) { $best = $k; $bestMs = $ms }
     }
     $Region = Ask ('Region (' + ($regions.Keys -join ', ') + ')') $(if ($best) { $best } else { 'us-east-1' })
@@ -388,7 +407,7 @@ if (-not $NodeId) {
         try { $r = PostJson '/nodes/signup-private' @{ code = $SetupCode; name = $Name } } catch { Fail "Setup code refused: $_" }
     } else {
         if (-not $Contact) { $Contact = Ask 'Your Discord name (so we can reach you about approval)' '' -Always }
-        try { $r = PostJson '/nodes/signup' @{ name = $Name; contact = $Contact; publicIp = $PublicIp } } catch { Fail "Sign-up refused: $_" }
+        try { $r = PostJson '/nodes/signup' @{ name = $Name; contact = $Contact; publicIp = $PublicIp; machine = $Machine; regionPings = $RegionPings } } catch { Fail "Sign-up refused: $_" }
         # Public matchmaking needs a VPS or dedicated server - say so now, not after a review.
         if ($r.node.network -and $r.node.network.hosting -eq $false) {
             Write-Host ''
@@ -520,7 +539,7 @@ if ($LASTEXITCODE -ne 0) { Fail 'Writing the configs failed (see above)' }
 
 # ---- 7. firewall + auto-start ---------------------------------------------------------------
 Step 'Firewall and auto-start'
-if ($SkipSystemChanges) { Info 'Skipped (-SkipSystemChanges): open UDP 7777-7781 inbound and start Start-AllModes.bat yourself.' } else {
+if ($SkipSystemChanges) { Info 'Skipped (-SkipSystemChanges): open UDP 7777-7781 and 7877-7881 (warm spares) inbound and start Start-AllModes.bat yourself.' } else {
 $rule = 'Rumbleverse servers (UDP 7777-7781)'
 Get-NetFirewallRule -DisplayName $rule -ErrorAction SilentlyContinue | Remove-NetFirewallRule
 if ($IsPrivate) {
@@ -535,8 +554,9 @@ if ($IsPrivate) {
     New-NetFirewallRule -DisplayName $pingRule -Direction Inbound -Protocol ICMPv4 -IcmpType 8 -Action Allow `
         -RemoteAddress '100.64.0.0/10', '26.0.0.0/8' | Out-Null
 } else {
-    New-NetFirewallRule -DisplayName $rule -Direction Inbound -Protocol UDP -LocalPort 7777-7781 -Action Allow | Out-Null
-    Info "Firewall: $rule (also open these in your provider's panel / router if it has a firewall)"
+    # 7877-7881: the warm spare servers (a second server per Battle Royale mode, port + 100).
+    New-NetFirewallRule -DisplayName $rule -Direction Inbound -Protocol UDP -LocalPort 7777-7781, 7877-7881 -Action Allow | Out-Null
+    Info "Firewall: $rule + warm spares (UDP 7877-7881) (also open these in your provider's panel / router if it has a firewall)"
     # Ping: players' launchers show their ping to each server (Windows blocks ping by default).
     $pingRule = 'Rumbleverse server (ping)'
     Get-NetFirewallRule -DisplayName $pingRule -ErrorAction SilentlyContinue | Remove-NetFirewallRule

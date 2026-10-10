@@ -15,10 +15,14 @@ WHAT YOU NEED
   - Windows 10/11 or Windows Server 2019+, 64-bit
   - YOUR OWN copy of Rumbleverse (we never provide game files). Setup finds the one your
     rVclient launcher uses.
-  - RAM: about 3.5 GB for each mode you run (Playground alone is the lightest)
+  - RAM: about 2 GB for each server (memory saving is on by default). A community server runs
+    TWO servers per Battle Royale mode (the warm spare - see below), so about 4 GB per mode; the
+    spare only starts when 2.5 GB are free. A private server runs one server per mode.
   - Disk: about 15 GB if setup copies your game files, about 1 GB if it links them
   - Private server: Tailscale or Radmin VPN on your PC and your friends' PCs, same network
-  - Community server: UDP ports 7777-7781 open in your provider's firewall
+  - Community server: UDP ports 7777-7781 AND 7877-7881 (the warm spares) open in your
+    provider's firewall. Setup opens them in Windows Firewall for you; a provider panel or a
+    router needs them opened / forwarded by hand.
   - The newest rVclient launcher
 
 OPTIONAL: CHECK YOUR MACHINE FIRST (2 minutes, changes nothing)
@@ -45,10 +49,21 @@ YOUR GAME STAYS YOURS
   Setup never moves or changes your game. It keeps starting from the rVclient launcher as
   always - also while your own server is running.
 
+WHAT YOUR SERVER DOES BY ITSELF (community servers)
+  - Warm spare: every Battle Royale mode has a second server ready on port + 100. One lobby is
+    open at a time; the moment a match launches, the next lobby opens on the other server, so
+    players never wait for a reboot.
+  - Auto barge countdown: the lobby countdown follows how fast players arrive - busy = longer,
+    so lobbies fill toward 40 players; quiet = 120 s, so nobody waits long for nobody.
+  - Memory saving and bots on teams (Duos / Trios / Squads) - fixes by MCha.
+
 MANAGING YOUR SERVER
-  The "rV Modes (server)" shortcut on your desktop: switch modes on/off, bots per match and
-  barge countdown (gear button), restart a mode, see your review status, update.
-  Updates come by themselves - you never download server files again by hand.
+  The "rV Modes (server)" shortcut on your desktop: switch modes on/off, restart a mode, see
+  your review status, update. The gear button has each mode's settings: bots per match, barge
+  countdown, Warm spare server, Auto barge countdown (shortest / longest), Memory saving,
+  Bots on teams and more.
+  Updates come by themselves - you never download server files again by hand. After an update,
+  restart rV Modes' servers (or reboot) once so the warm spares start.
 
 REMOVING IT
   Private server: Server Status > My private servers > Remove (on the PC that runs it).
