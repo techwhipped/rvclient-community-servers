@@ -43,7 +43,7 @@ Found a problem and have a fix? Share it in the rVclient Discord - we test it, b
 ### Built on
 | Project | Used for |
 |---|---|
-| [**UE4-Librarian**](https://github.com/Aeyth8/UE4-Librarian) by **Aeyth8** | The DLL loader (`dxgi.dll` + `DList.ini`) that loads the server's mods into the game server, and Client.dll into players' games |
+| [**UE4-Librarian**](https://github.com/Aeyth8/UE4-Librarian) by **Aeyth8** | The DLL loader (`dxgi.dll` + `DList.ini`) that loads the server's mods into the game server (until the server kit moves to rVclient's own loader) |
 | [**Unreal Mod Unlocker**](https://github.com/IllusorySoftware/UnrealModUnlocker-Public) by **Illusory Software** | The proxy code inside that loader, and the server's loose-file mod loading (`UnrealModPlugins/UnrealModUnlocker.dll`) |
 
 Questions? Ask in the rVclient Discord.
