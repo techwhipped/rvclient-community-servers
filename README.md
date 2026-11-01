@@ -14,6 +14,8 @@ Host your own Rumbleverse server with rVclient.
 
 The same files are in the [`RVServer-Setup`](RVServer-Setup) folder of this repo.
 
+Using an AI agent (Claude Code, Codex, Cursor...)? Give it [`AI-AGENT-SETUP.md`](AI-AGENT-SETUP.md) - it checks your machine and walks you through setup.
+
 On a home internet connection setup always makes a **private** server - public community servers need a VPS or dedicated server.
 
 ## Good to know
