@@ -20,7 +20,7 @@ On a home internet connection setup always makes a **private** server - public c
 
 ## Good to know
 - You need **your own copy of Rumbleverse** - we never provide game files.
-- You need the **rVclient launcher 1.7.48 or newer**.
+- You need the **rVclient launcher 1.7.48 or newer** to host; players need **1.7.82 or newer** to join during an attack.
 - Your game is never changed - it keeps starting from the launcher, even while your server runs.
 - Updates come by themselves; to remove a server, run `Uninstall-RVServer.bat` (or Remove in the launcher for a private server).
 - **Community servers:** open UDP **7777-7781** and **7877-7881** (warm spares) in your provider's firewall or router. Plan about **4 GB RAM per Battle Royale mode** (two servers each, about 2 GB per server with memory saving).
@@ -31,6 +31,15 @@ On a home internet connection setup always makes a **private** server - public c
 - **Memory saving** (about 2 GB less RAM per server) and **bots on teams** in Duos / Trios / Squads.
 
 Everything is a setting in **rV Modes** (gear button) - on by default.
+
+## Protection against flood attacks
+Servers running rVclient are protected against flood attacks - junk traffic sent at a server to knock players out of their matches. The protection arrives with your server's automatic updates (server kit 2026.11.23.3 and newer):
+- **Players in a match keep playing** - flood traffic is thrown away before the game sees it, and your server no longer answers it.
+- **New players can still join during an attack** - they need the **rVclient launcher 1.7.82 or newer**.
+- **No mass drops** - if many players go silent at the same moment, the server waits instead of removing them all.
+- **Attacks show up for the rVclient team**, so we can see when and where they happen.
+
+Nothing to set up - keep your server updating itself. Players may notice a short stutter for a few seconds when an attack starts; it settles on its own.
 
 ## Credits
 Fixes contributed by community server hosts - thank you!
